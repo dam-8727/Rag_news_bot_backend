@@ -14,6 +14,10 @@ app.use(cors());
 
 // Parse JSON requests with 1MB limit to handle large messages
 app.use(express.json({ limit: "1mb" }));
+// status check
+app.get("/", (req, res) => {
+  res.send("rag-news-bot backend up!");
+});
 
 // Health check endpoint - simple way to verify the API is running
 app.get("/health", (_req, res) => res.json({ ok: true }));
