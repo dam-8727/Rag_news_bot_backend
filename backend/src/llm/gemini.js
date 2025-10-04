@@ -4,8 +4,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 // Initialize the Google AI client with our API key
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Use Gemini 1.5 Flash - it's fast and good for RAG applications
-const MODEL = "gemini-1.5-flash";
+// Use env override; default to a current, supported model
+const MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
 
 /**
  * Smart retry logic for handling API rate limits and temporary failures
@@ -16,17 +16,23 @@ async function retryWithBackoff(fn, maxRetries = 3, baseDelay = 1000) {
     try {
       return await fn();
     } catch (error) {
-      // If this is our last attempt, give up and throw the error
       if (i === maxRetries - 1) throw error;
-      
-      // Only retry if it's a service overload error (503) or similar
-      if (error.status === 503 || error.message.includes('overloaded')) {
-        // Exponential backoff: wait longer each time (1s, 2s, 4s...)
+
+      const status = error?.status ?? error?.response?.status;
+      const msg = String(error?.message || "");
+      const transient =
+        status === 503 ||
+        status === 502 ||
+        status === 500 ||
+        status === 504 ||
+        status === 429 ||
+        /overload|quota|rate|exceed/i.test(msg);
+
+      if (transient) {
         const delay = baseDelay * Math.pow(2, i);
-        console.log(`API overloaded, retrying in ${delay}ms... (attempt ${i + 1}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        console.log(`Transient error (${status || "n/a"}), retrying in ${delay}ms... (${i + 1}/${maxRetries})`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
       } else {
-        // Don't retry other types of errors (auth, bad request, etc.)
         throw error;
       }
     }
@@ -40,9 +46,9 @@ async function retryWithBackoff(fn, maxRetries = 3, baseDelay = 1000) {
 export async function answerWithContext({ message, contextDocs = [], history = [] }) {
   // Get the Gemini model instance
   const model = genAI.getGenerativeModel({ model: MODEL });
+  console.log("Using Gemini model:", MODEL);
 
   // Format the context documents into numbered blocks for the AI
-  // Each block contains title, URL, and text from a news article
   const ctxBlocks = contextDocs
     .map((d, i) => `---\n[${i + 1}] TITLE: ${d.title}\nURL: ${d.url}\nTEXT: ${d.text}`)
     .join("\n");
@@ -61,8 +67,10 @@ export async function answerWithContext({ message, contextDocs = [], history = [
 
   // Generate the response with retry logic in case of API issues
   const resp = await retryWithBackoff(async () => {
-    return await model.generateContent(prompt);
+    return await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: prompt }]}],
+    });
   });
-  
+
   return { text: resp.response.text() };
 }

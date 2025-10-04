@@ -9,8 +9,8 @@ This RAG (Retrieval-Augmented Generation) news bot combines vector search with L
 **Jina AI**: Simple HTTP + free tier, good embeddings  
 **Qdrant**: Fast vector DB, payload/citations easy  
 **Redis**: Simple session list + TTL (auto cleanup)  
-**Gemini**: Fast LLM, good RAG performance  
-**Express**: REST API, easy debugging, SSE ready  
+**Gemini**: Fast LLM+ free tier, good RAG performance  
+**Express**: REST API, easy debugging  
 **Cheerio**: jQuery-like scraping, multiple selectors
 
 ##  Architecture Components
