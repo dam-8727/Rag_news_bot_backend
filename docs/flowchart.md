@@ -299,13 +299,3 @@ User Query
 └─────────┘ └─────────────┘
 ```
 
-This flowchart shows the complete flow of your RAG news bot system, including:
-1. **Main user query flow** - from user input to response
-2. **Data ingestion flow** - how news articles are processed and stored
-3. **System components overview** - all the services and their relationships
-4. **Key decision points** - important branching logic in your system
-5. **API endpoints flow** - how different endpoints are used
-6. **Error handling flow** - how the system handles failures gracefully
-
-The flowcharts are designed to be simple and easy to follow, showing the logical progression through your system without getting too technical.
-
